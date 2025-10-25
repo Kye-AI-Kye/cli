@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # The Redis service acts as the central message bus (EventStream)
+  redis:
+    image: "redis:7-alpine"
+    container_name: godprotocol_redis
+    ports:
+      # Expose Redis to your host machine for debugging (optional)
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - godprotocol_net
+
+  # The agent service that runs the GodProtocol code
+  agent:
+    container_name: godprotocol_agent
+    # Build the agent image from the local Dockerfile
+    build: .
+    restart: unless-stopped
+    # Pass all secrets from the .env file into the container
+    env_file: .env
+    # This agent depends on Redis to be running first
+    depends_on:
+      - redis
+    networks:
+      - godprotocol_net
+
+networks:
+  godprotocol_net:
+    driver: bridge
+
+volumes:
+  redis_data:
